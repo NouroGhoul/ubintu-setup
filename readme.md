@@ -1,23 +1,3 @@
-I'll help you reorganize the files and update the README accordingly. Here's the new file structure and updated README:
-
-## File Structure
-```
-ubuntu-setup-scripts/
-├── README.md
-├── quick-setup.sh
-├── setup-menu.sh
-└── bash-resources/
-    ├── system-setup.sh
-    ├── theme-setup.sh
-    ├── browsers-setup.sh
-    ├── communication-setup.sh
-    ├── media-setup.sh
-    ├── dev-setup.sh
-    └── shell-setup.sh
-```
-
-## Updated README.md
-
 # Ubuntu Setup Automation Scripts
 
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%2B-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
@@ -171,7 +151,7 @@ For the fastest setup, use the quick launcher:
 | `communication-setup.sh` | Discord, Telegram | 1-2 minutes |
 | `media-setup.sh` | VLC, OBS, Steam, qBittorrent, LocalSend | 3-5 minutes |
 | `dev-setup.sh` | Git, Node.js, Python, VS Code, Tmux, Vim | 4-6 minutes |
-| `shell-setup.sh` | Zsh, Oh My Zsh, Powerlevel10k | 2-3 minutes |
+| `shell-setup.sh` | Zsh, Oh My Zsh, Powerlevel10k, plugins | 3-5 minutes |
 
 ## ⚙️ Configuration Details
 
@@ -189,10 +169,14 @@ For the fastest setup, use the quick launcher:
 - **Python3** with pip package manager
 - **VS Code** with official Microsoft repository
 - **Git** configured with standard settings
+- **Build Essentials** for native module compilation
 
 ### Shell Enhancement
 - **Zsh** as default shell with Oh My Zsh framework
 - **Powerlevel10k** theme for beautiful prompts
+- **zsh-autosuggestions** for command suggestions
+- **zsh-syntax-highlighting** for better command visibility
+- **Tmux** for terminal multiplexing
 - Enhanced terminal experience with plugins
 
 ## 🔧 Customization Guide
@@ -227,7 +211,18 @@ p10k configure
 nano ~/.zshrc
 
 # Add Oh My Zsh plugins
-# Edit plugins=(git docker node npm python)
+# Edit plugins=(git docker node npm python zsh-autosuggestions zsh-syntax-highlighting)
+```
+
+### Adding Oh My Zsh Plugins
+The shell setup automatically installs useful plugins. To add more:
+
+```bash
+# Install additional plugins
+git clone https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-completions
+
+# Add to plugins in ~/.zshrc
+plugins=(... zsh-completions)
 ```
 
 ## 🐛 Troubleshooting
@@ -246,16 +241,30 @@ chmod +x bash-resources/*.sh
 cd ubuntu-setup-scripts
 ```
 
-**Flatpak Apps Not Showing**
+**Oh My Zsh Installation Failed**
 ```bash
-# Restart session or run:
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+# Manual installation if git clone fails
+wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+sh install.sh
 ```
 
 **Zsh Not Default Shell**
 ```bash
 chsh -s $(which zsh)
 # Log out and log back in
+```
+
+**Powerlevel10k Prompt Not Appearing**
+```bash
+# Restart terminal or run:
+exec zsh
+p10k configure
+```
+
+**Flatpak Apps Not Showing**
+```bash
+# Restart session or run:
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 ```
 
 **Node.js Installation Failed**
@@ -276,6 +285,17 @@ sudo apt install gnome-tweaks
 Run scripts with debug output:
 ```bash
 bash -x setup-menu.sh
+bash -x bash-resources/shell-setup.sh
+```
+
+### Log Files
+Check system logs for package manager issues:
+```bash
+# APT logs
+tail -f /var/log/apt/term.log
+
+# Check Zsh configuration
+cat ~/.zshrc
 ```
 
 ## 📋 Pre-Installation Checklist
@@ -303,6 +323,22 @@ bash -x setup-menu.sh
    ```
 3. **Configure Brave/Chrome** with your accounts and extensions
 4. **Set up development environments** for your projects
+5. **Explore Oh My Zsh plugins** and enable ones you need
+6. **Customize Powerlevel10k** prompt to your preference
+
+### Shell Customization Examples
+```bash
+# Enable Oh My Zsh plugins
+nano ~/.zshrc
+# Add: plugins=(git node npm python docker tmux zsh-autosuggestions zsh-syntax-highlighting)
+
+# Set favorite aliases
+echo "alias ll='ls -la'" >> ~/.zshrc
+echo "alias update='sudo apt update && sudo apt upgrade'" >> ~/.zshrc
+
+# Reload configuration
+source ~/.zshrc
+```
 
 ## 🤝 Contributing
 
@@ -318,6 +354,7 @@ We welcome contributions! Here's how you can help:
 - Test scripts on fresh Ubuntu installations
 - Document new features in README
 - Maintain the folder structure (scripts in `bash-resources/`)
+- Use proper git cloning for external resources
 
 ## 📄 License
 
@@ -326,17 +363,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **Graphite Theme** by [vinceliuice](https://github.com/vinceliuice/Graphite-gtk-theme)
-- **Oh My Zsh** community for amazing shell plugins
+- **Oh My Zsh** community for amazing shell plugins and framework
 - **Powerlevel10k** for the beautiful prompt theme
+- **zsh-users** for essential plugins (autosuggestions, syntax-highlighting)
 - **Ubuntu** team for an excellent Linux distribution
 
 ## 📞 Support
 
 If you encounter any issues or have questions:
 
-1. Check the [Troubleshooting](#-troubleshooting) section
+1. Check the [Troubleshooting](#-troubleshooting) section above
 2. Search existing [Issues](../../issues)
-3. Create a new issue with detailed information
+3. Create a new issue with detailed information including:
+   - Ubuntu version
+   - Script that failed
+   - Error messages
+   - Steps to reproduce
 
 ---
 
