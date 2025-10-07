@@ -17,15 +17,15 @@ show_menu() {
     echo "╔══════════════════════════════════════╗"
     echo "║        UBUNTU SETUP MENU             ║"
     echo "╠══════════════════════════════════════╣"
-    echo "║  ${GREEN}1${BLUE}  System & Package Management    ║"
-    echo "║  ${GREEN}2${BLUE}  Theme Installation             ║"
-    echo "║  ${GREEN}3${BLUE}  Web Browsers                   ║"
-    echo "║  ${GREEN}4${BLUE}  Communication Apps             ║"
-    echo "║  ${GREEN}5${BLUE}  Media & Entertainment          ║"
-    echo "║  ${GREEN}6${BLUE}  Development Tools              ║"
-    echo "║  ${GREEN}7${BLUE}  Terminal & Shell               ║"
-    echo "║  ${GREEN}8${BLUE}  Run ALL Setup Scripts          ║"
-    echo "║  ${GREEN}0${BLUE}  Exit                           ║"
+    echo -e "║  ${GREEN}1${BLUE}  System & Package Management    ║"
+    echo -e "║  ${GREEN}2${BLUE}  Theme Installation             ║"
+    echo -e "║  ${GREEN}3${BLUE}  Web Browsers                   ║"
+    echo -e "║  ${GREEN}4${BLUE}  Communication Apps             ║"
+    echo -e "║  ${GREEN}5${BLUE}  Media & Entertainment          ║"
+    echo -e "║  ${GREEN}6${BLUE}  Development Tools              ║"
+    echo -e "║  ${GREEN}7${BLUE}  Terminal & Shell               ║"
+    echo -e "║  ${GREEN}8${BLUE}  Run ALL Setup Scripts          ║"
+    echo -e "║  ${GREEN}0${BLUE}  Exit                           ║"
     echo "╚══════════════════════════════════════╝"
     echo -e "${NC}"
 }
@@ -39,7 +39,7 @@ run_script() {
     echo -e "\n${YELLOW}Running: $description...${NC}"
     
     if [ -f "$script_path" ] && [ -x "$script_path" ]; then
-        ./$script_path
+        ./"$script_path"
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✓ $description completed successfully!${NC}"
         else
