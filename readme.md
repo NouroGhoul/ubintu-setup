@@ -1,3 +1,23 @@
+I'll help you reorganize the files and update the README accordingly. Here's the new file structure and updated README:
+
+## File Structure
+```
+ubuntu-setup-scripts/
+├── README.md
+├── quick-setup.sh
+├── setup-menu.sh
+└── bash-resources/
+    ├── system-setup.sh
+    ├── theme-setup.sh
+    ├── browsers-setup.sh
+    ├── communication-setup.sh
+    ├── media-setup.sh
+    ├── dev-setup.sh
+    └── shell-setup.sh
+```
+
+## Updated README.md
+
 # Ubuntu Setup Automation Scripts
 
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%2B-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
@@ -14,6 +34,23 @@ A comprehensive collection of modular bash scripts designed to automate the setu
 - **⚡ Production Ready** - Battle-tested scripts with error handling
 - **🔧 Developer Focused** - Optimized for development workflows
 - **🎯 Customizable** - Easy to modify and extend for your needs
+
+## 📁 Project Structure
+
+```
+ubuntu-setup-scripts/
+├── 📄 README.md                 # This documentation
+├── 🚀 quick-setup.sh            # One-click setup launcher
+├── 🎮 setup-menu.sh             # Main interactive menu
+└── 📂 bash-resources/           # Category-specific scripts
+    ├── 🔧 system-setup.sh       # System tools & package management
+    ├── 🎨 theme-setup.sh        # Graphite theme installation
+    ├── 🌐 browsers-setup.sh     # Web browsers (Brave, Chrome)
+    ├── 💬 communication-setup.sh # Communication apps
+    ├── 🎵 media-setup.sh        # Media & entertainment
+    ├── 💻 dev-setup.sh          # Development tools
+    └── 🐚 shell-setup.sh        # Terminal & shell enhancements
+```
 
 ## 📦 What Gets Installed
 
@@ -56,12 +93,10 @@ A comprehensive collection of modular bash scripts designed to automate the setu
 
 ### Installation
 
-1. **Clone or download the scripts:**
+1. **Clone the repository:**
    ```bash
-   # If you have git installed
-https://github.com/NouroGhoul/ubintu-setup.git 
-  cd ubuntu-setup-scripts
-   # Or download and extract the zip file
+   git clone https://github.com/NouroGhoul/ubintu-setup.git
+   cd ubuntu-setup-scripts
    ```
 
 2. **Run the quick setup:**
@@ -72,33 +107,14 @@ https://github.com/NouroGhoul/ubintu-setup.git
 
 3. **Follow the interactive menu** to select which components to install.
 
-## 📁 Script Documentation
-
-### Main Control Scripts
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `setup-menu.sh` | **Interactive CLI Menu** | Primary interface for all installations |
-| `quick-setup.sh` | **One-Click Launcher** | Makes scripts executable and starts menu |
-
-### Category Scripts
-
-| Script | Installs | Estimated Time |
-|--------|----------|----------------|
-| `system-setup.sh` | Flatpak, GNOME tools, Timeshift | 2-3 minutes |
-| `theme-setup.sh` | Graphite GTK Theme | 1-2 minutes |
-| `browsers-setup.sh` | Brave, Google Chrome | 2-3 minutes |
-| `communication-setup.sh` | Discord, Telegram | 1-2 minutes |
-| `media-setup.sh` | VLC, OBS, Steam, qBittorrent, LocalSend | 3-5 minutes |
-| `dev-setup.sh` | Git, Node.js, Python, VS Code, Tmux, Vim | 4-6 minutes |
-| `shell-setup.sh` | Zsh, Oh My Zsh, Powerlevel10k | 2-3 minutes |
-
-## 🎯 Usage Examples
+## 🎯 Usage
 
 ### Interactive Menu (Recommended)
 ```bash
 ./setup-menu.sh
 ```
+
+You'll see this interactive menu:
 ```
 ╔══════════════════════════════════════╗
 ║        UBUNTU SETUP MENU             ║
@@ -116,20 +132,46 @@ https://github.com/NouroGhoul/ubintu-setup.git
 ```
 
 ### Individual Script Execution
+You can also run scripts directly from the `bash-resources/` folder:
+
 ```bash
 # Install only development tools
-./dev-setup.sh
+./bash-resources/dev-setup.sh
 
 # Install only media applications
-./media-setup.sh
+./bash-resources/media-setup.sh
 
 # Run complete setup (all scripts)
 ./setup-menu.sh
 # Then choose option 8
 ```
 
-### Manual Package Installation
-If you prefer to install packages manually, each script contains well-commented commands that can be copied and executed individually.
+### Quick Setup
+For the fastest setup, use the quick launcher:
+```bash
+./quick-setup.sh
+```
+
+## 📋 Script Documentation
+
+### Main Control Scripts (Root Directory)
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `setup-menu.sh` | **Interactive CLI Menu** | Primary interface for all installations |
+| `quick-setup.sh` | **One-Click Launcher** | Makes scripts executable and starts menu |
+
+### Category Scripts (bash-resources/)
+
+| Script | Installs | Estimated Time |
+|--------|----------|----------------|
+| `system-setup.sh` | Flatpak, GNOME tools, Timeshift | 2-3 minutes |
+| `theme-setup.sh` | Graphite GTK Theme | 1-2 minutes |
+| `browsers-setup.sh` | Brave, Google Chrome | 2-3 minutes |
+| `communication-setup.sh` | Discord, Telegram | 1-2 minutes |
+| `media-setup.sh` | VLC, OBS, Steam, qBittorrent, LocalSend | 3-5 minutes |
+| `dev-setup.sh` | Git, Node.js, Python, VS Code, Tmux, Vim | 4-6 minutes |
+| `shell-setup.sh` | Zsh, Oh My Zsh, Powerlevel10k | 2-3 minutes |
 
 ## ⚙️ Configuration Details
 
@@ -156,16 +198,16 @@ If you prefer to install packages manually, each script contains well-commented 
 ## 🔧 Customization Guide
 
 ### Adding New Packages
-Edit the respective script file:
+Edit the respective script file in `bash-resources/`:
 
 ```bash
-# Example: Add to dev-setup.sh
+# Example: Add to bash-resources/dev-setup.sh
 echo "Installing additional development tools..."
 sudo apt install postman docker -y
 ```
 
 ### Modifying Themes
-Edit `theme-setup.sh` to change themes:
+Edit `bash-resources/theme-setup.sh` to change themes:
 
 ```bash
 # Replace Graphite with another theme
@@ -195,6 +237,13 @@ nano ~/.zshrc
 **Script Permission Denied**
 ```bash
 chmod +x *.sh
+chmod +x bash-resources/*.sh
+```
+
+**Script Not Found**
+```bash
+# Make sure you're in the correct directory
+cd ubuntu-setup-scripts
 ```
 
 **Flatpak Apps Not Showing**
@@ -226,17 +275,7 @@ sudo apt install gnome-tweaks
 ### Debug Mode
 Run scripts with debug output:
 ```bash
-bash -x script-name.sh
-```
-
-### Log Files
-Check system logs for package manager issues:
-```bash
-# APT logs
-tail -f /var/log/apt/term.log
-
-# Flatpak logs
-flatpak repair --dry-run
+bash -x setup-menu.sh
 ```
 
 ## 📋 Pre-Installation Checklist
@@ -278,6 +317,7 @@ We welcome contributions! Here's how you can help:
 - Include error handling and user feedback
 - Test scripts on fresh Ubuntu installations
 - Document new features in README
+- Maintain the folder structure (scripts in `bash-resources/`)
 
 ## 📄 License
 
