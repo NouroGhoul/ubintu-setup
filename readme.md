@@ -59,9 +59,8 @@ A comprehensive collection of modular bash scripts designed to automate the setu
 1. **Clone or download the scripts:**
    ```bash
    # If you have git installed
-   git clone <repository-url>
-   cd ubuntu-setup-scripts
-   
+https://github.com/NouroGhoul/ubintu-setup.git 
+  cd ubuntu-setup-scripts
    # Or download and extract the zip file
    ```
 
