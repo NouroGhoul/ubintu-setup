@@ -8,4 +8,4 @@ cd Graphite-gtk-theme
 cd ..
 rm -rf Graphite-gtk-theme
 
-echo "Graphite theme installation complete!"
+echo "Graphite theme installation complete!"d
