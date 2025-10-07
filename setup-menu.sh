@@ -7,6 +7,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Scripts directory
+SCRIPTS_DIR="bash-resources"
+
 # Function to display menu
 show_menu() {
     clear
@@ -31,22 +34,31 @@ show_menu() {
 run_script() {
     local script_name=$1
     local description=$2
+    local script_path="$SCRIPTS_DIR/$script_name"
     
     echo -e "\n${YELLOW}Running: $description...${NC}"
     
-    if [ -f "$script_name" ] && [ -x "$script_name" ]; then
-        ./$script_name
+    if [ -f "$script_path" ] && [ -x "$script_path" ]; then
+        ./$script_path
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✓ $description completed successfully!${NC}"
         else
             echo -e "${RED}✗ $description failed!${NC}"
         fi
     else
-        echo -e "${RED}✗ Script '$script_name' not found or not executable!${NC}"
+        echo -e "${RED}✗ Script '$script_path' not found or not executable!${NC}"
+        echo -e "${YELLOW}Make sure you're in the correct directory and scripts are executable.${NC}"
     fi
     
     read -p "Press Enter to continue..."
 }
+
+# Check if scripts directory exists
+if [ ! -d "$SCRIPTS_DIR" ]; then
+    echo -e "${RED}Error: '$SCRIPTS_DIR' directory not found!${NC}"
+    echo -e "${YELLOW}Make sure you're in the correct project directory.${NC}"
+    exit 1
+fi
 
 # Main loop
 while true; do
