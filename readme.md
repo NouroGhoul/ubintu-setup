@@ -9,7 +9,7 @@ A minimal, interactive bash script collection for automating Ubuntu setup and ap
 
 ```bash
 git clone https://github.com/NouroGhoul/ubintu-setup.git
-cd ubuntu-setup-scripts
+cd ubuntu-setup
 chmod +x quick-setup.sh
 ./quick-setup.sh
 ```
@@ -17,7 +17,7 @@ chmod +x quick-setup.sh
 ## 📁 Structure
 
 ```
-ubuntu-setup-scripts/
+ubuntu-setup/
 ├── quick-setup.sh          # One-click launcher
 ├── setup-menu.sh           # Main interactive menu
 └── bash-resources/         # Category scripts
