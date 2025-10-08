@@ -49,15 +49,53 @@ install_discord() {
         return 0
     fi
 
-    # Install Discord via Snap
-    sudo snap install discord
+    # Install wget if not available
+    if ! command -v wget &> /dev/null; then
+        echo "Installing wget..."
+        sudo apt install wget -y
+    fi
 
-    if command -v discord &> /dev/null; then
-        echo -e "${GREEN}✓ Discord installed successfully!${NC}"
-        return 0
+    # Download Discord .deb package directly
+    echo "Downloading Discord .deb package..."
+    wget https://stable.dl2.discordapp.net/apps/linux/0.0.111/discord-0.0.111.deb -O /tmp/discord.deb
+
+    if [ -f "/tmp/discord.deb" ]; then
+        echo "Discord .deb package downloaded successfully!"
+        
+        # Install Discord using dpkg
+        echo "Installing Discord with dpkg..."
+        sudo dpkg -i /tmp/discord.deb
+        
+        # Fix any dependency issues
+        echo "Fixing dependencies..."
+        sudo apt install -f -y
+        
+        # Clean up
+        echo "Cleaning up temporary files..."
+        rm /tmp/discord.deb
+
+        if command -v discord &> /dev/null; then
+            echo -e "${GREEN}✓ Discord installed successfully!${NC}"
+            return 0
+        else
+            echo -e "${YELLOW}Discord installation completed but command not found immediately${NC}"
+            echo -e "${YELLOW}Try launching from applications menu or restart your session${NC}"
+            return 0
+        fi
     else
-        echo -e "${RED}✗ Failed to install Discord${NC}"
-        return 1
+        echo -e "${RED}✗ Failed to download Discord .deb package${NC}"
+        echo -e "${YELLOW}Falling back to Snap installation...${NC}"
+        
+        # Fallback to Snap installation
+        sudo snap install discord
+        
+        if command -v discord &> /dev/null; then
+            echo -e "${GREEN}✓ Discord installed via Snap successfully!${NC}"
+            return 0
+        else
+            echo -e "${RED}✗ Failed to install Discord via Snap${NC}"
+            return 1
+        fi
     fi
 }
 
