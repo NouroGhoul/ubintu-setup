@@ -102,16 +102,27 @@ install_discord() {
 install_telegram() {
     echo -e "\n${YELLOW}Installing Telegram...${NC}"
     
-    if command -v telegram-desktop &> /dev/null; then
+    if command -v telegram-desktop &> /dev/null || snap list telegram-desktop &> /dev/null; then
         echo -e "${YELLOW}Telegram is already installed. Skipping...${NC}"
         return 0
     fi
 
-    # Install Telegram
+    # Try Snap installation first (newer versions)
+    echo "Attempting Snap installation..."
+    if sudo snap install telegram-desktop; then
+        if snap list telegram-desktop &> /dev/null; then
+            echo -e "${GREEN}✓ Telegram installed successfully via Snap!${NC}"
+            return 0
+        fi
+    fi
+
+    echo -e "${YELLOW}Snap installation failed, falling back to APT...${NC}"
+    
+    # Fallback to APT installation
     sudo apt install telegram-desktop -y
 
     if command -v telegram-desktop &> /dev/null; then
-        echo -e "${GREEN}✓ Telegram installed successfully!${NC}"
+        echo -e "${GREEN}✓ Telegram installed successfully via APT!${NC}"
         return 0
     else
         echo -e "${RED}✗ Failed to install Telegram${NC}"
