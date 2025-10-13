@@ -14,6 +14,7 @@ chmod +x bash-resources/*.sh
 
 echo -e "${GREEN}All scripts are now executable!${NC}"
 echo -e "${YELLOW}Starting the setup menu...${NC}"
+echo -e "${YELLOW}If you encounter permission issues, run: chmod +x *.sh && chmod +x bash-resources/*.sh${NC}"
 
 # Run the menu
 ./setup-menu.sh

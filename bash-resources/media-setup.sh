@@ -129,15 +129,27 @@ install_qbittorrent() {
 install_localsend() {
     echo -e "\n${YELLOW}Installing LocalSend...${NC}"
     
-    if command -v localsend &> /dev/null; then
+    if command -v localsend &> /dev/null || snap list localsend &> /dev/null; then
         echo -e "${YELLOW}LocalSend is already installed. Skipping...${NC}"
         return 0
     fi
 
+    # Try Snap installation (recommended for LocalSend)
+    echo "Attempting Snap installation..."
+    if sudo snap install localsend; then
+        if snap list localsend &> /dev/null; then
+            echo -e "${GREEN}✓ LocalSend installed successfully via Snap!${NC}"
+            return 0
+        fi
+    fi
+
+    echo -e "${YELLOW}Snap installation failed, falling back to APT...${NC}"
+    
+    # Fallback to APT installation
     sudo apt install localsend -y
 
     if command -v localsend &> /dev/null; then
-        echo -e "${GREEN}✓ LocalSend installed successfully!${NC}"
+        echo -e "${GREEN}✓ LocalSend installed successfully via APT!${NC}"
         return 0
     else
         echo -e "${RED}✗ Failed to install LocalSend${NC}"
