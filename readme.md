@@ -1,5 +1,3 @@
-🚀 Ubuntu Setup Automation
-
 <div align="center">
 
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%2B-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
