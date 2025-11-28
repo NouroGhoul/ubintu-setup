@@ -13,6 +13,25 @@ INSTALL_GNOME_TWEAKS=false
 INSTALL_TIMESHIFT=false
 INSTALL_PROTON_VPN=false
 
+# Ubuntu version detection functions
+get_ubuntu_version() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$VERSION_ID"
+    else
+        echo "unknown"
+    fi
+}
+
+get_ubuntu_codename() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$UBUNTU_CODENAME"
+    else
+        echo "unknown"
+    fi
+}
+
 show_system_menu() {
     clear
     echo -e "${BLUE}"
@@ -47,20 +66,143 @@ show_custom_system_menu() {
     echo -e "  Proton VPN: $([ "$INSTALL_PROTON_VPN" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
 }
 
+install_flatpak_plugin() {
+    local version=$(get_ubuntu_version)
+    local codename=$(get_ubuntu_codename)
+    
+    echo -e "\n${YELLOW}Detected Ubuntu $version ($codename)${NC}"
+    
+    # Check if it's 18.10 (Cosmic) or later
+    if [[ "$version" == "18.10" ]] || [[ "$version" > "18.10" ]]; then
+        echo "Ubuntu version supports Flatpak plugin installation"
+        
+        # Check for Ubuntu 23.10+ (which has App Center instead of GNOME Software)
+        if [[ "$version" == "23.10" ]] || [[ "$version" == "24.04" ]] || [[ "$version" > "23.10" ]]; then
+            echo -e "${YELLOW}Ubuntu $version uses App Center - installing GNOME Software with Flatpak support...${NC}"
+            
+            # Install GNOME Software as deb package with Flatpak plugin
+            if ! command -v gnome-software &> /dev/null; then
+                echo "Installing GNOME Software with Flatpak plugin..."
+                sudo apt install gnome-software gnome-software-plugin-flatpak -y
+            else
+                echo "GNOME Software already installed, adding Flatpak plugin..."
+                sudo apt install gnome-software-plugin-flatpak -y
+            fi
+            
+        # Check for Ubuntu 20.04 to 23.04 (GNOME Software as Snap)
+        elif [[ "$version" == "20.04" ]] || [[ "$version" == "20.10" ]] || 
+             [[ "$version" == "21.04" ]] || [[ "$version" == "21.10" ]] ||
+             [[ "$version" == "22.04" ]] || [[ "$version" == "22.10" ]] ||
+             [[ "$version" == "23.04" ]]; then
+            
+            echo -e "${YELLOW}Ubuntu $version uses Snap GNOME Software - installing deb version with Flatpak support...${NC}"
+            echo -e "${YELLOW}Note: This will install both Snap and deb versions of 'Software'${NC}"
+            
+            sudo apt install gnome-software gnome-software-plugin-flatpak -y
+            
+        # Ubuntu 18.10 to 19.10 (original GNOME Software)
+        else
+            echo "Installing GNOME Software Flatpak plugin..."
+            sudo apt install gnome-software-plugin-flatpak -y
+        fi
+        
+        echo -e "${GREEN}✓ Flatpak GUI support installed${NC}"
+    else
+        echo -e "${YELLOW}Ubuntu version < 18.10 - skipping GNOME Software plugin installation${NC}"
+        echo -e "${YELLOW}You can manage Flatpak apps via command line${NC}"
+    fi
+}
+
+show_restart_instructions() {
+    echo -e "\n${YELLOW}=== Flatpak Setup Complete ===${NC}"
+    echo -e "To complete Flatpak setup:"
+    echo -e "1. ${GREEN}RESTART YOUR SYSTEM${NC} for all changes to take effect"
+    echo -e "2. After restart, you can install Flatpak apps via:"
+    echo -e "   - ${GREEN}GNOME Software${NC} (GUI)"
+    echo -e "   - ${GREEN}flatpak install flathub <app-id>${NC} (command line)"
+    echo -e ""
+    echo -e "${YELLOW}Common Flatpak app examples:${NC}"
+    echo -e "   flatpak install flathub com.spotify.Client"
+    echo -e "   flatpak install flathub org.videolan.VLC"
+    echo -e "   flatpak install flathub com.visualstudio.code"
+}
+
+verify_flatpak_setup() {
+    echo -e "\n${YELLOW}=== Verifying Flatpak Setup ===${NC}"
+    
+    # Check Flatpak installation
+    if command -v flatpak &> /dev/null; then
+        local flatpak_version=$(flatpak --version)
+        echo -e "${GREEN}✓ $flatpak_version${NC}"
+    else
+        echo -e "${RED}✗ Flatpak not installed${NC}"
+        return 1
+    fi
+    
+    # Check Flathub repository
+    if flatpak remote-list | grep -q flathub; then
+        echo -e "${GREEN}✓ Flathub repository configured${NC}"
+    else
+        echo -e "${RED}✗ Flathub repository missing${NC}"
+        return 1
+    fi
+    
+    # Check GNOME Software plugin
+    if [[ $(get_ubuntu_version) > "18.10" ]]; then
+        if dpkg -l | grep -q "gnome-software-plugin-flatpak"; then
+            echo -e "${GREEN}✓ GNOME Software Flatpak plugin installed${NC}"
+        else
+            echo -e "${YELLOW}⚠ GNOME Software Flatpak plugin not installed${NC}"
+        fi
+    fi
+    
+    echo -e "\n${GREEN}✓ Flatpak setup verification complete${NC}"
+    return 0
+}
+
 install_flatpak() {
     echo -e "\n${YELLOW}Installing Flatpak...${NC}"
     
     if command -v flatpak &> /dev/null; then
         echo -e "${YELLOW}Flatpak is already installed.${NC}"
+        # Verify Flathub repo is added
+        if ! flatpak remote-list | grep -q flathub; then
+            echo "Adding Flathub repository..."
+            flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+        fi
         return 0
     fi
 
+    # Install Flatpak
+    echo "Installing Flatpak package..."
+    sudo apt update
     sudo apt install flatpak -y
-    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+    # Wait for installation to complete
+    sleep 2
+
+    # Add Flathub repository
+    echo "Adding Flathub repository..."
+    if ! flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
+        echo -e "${YELLOW}Retrying Flathub repository addition...${NC}"
+        sleep 3
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    fi
+
+    # Install GNOME Software Flatpak plugin based on Ubuntu version
+    install_flatpak_plugin
 
     if command -v flatpak &> /dev/null; then
         echo -e "${GREEN}✓ Flatpak installed successfully!${NC}"
-        echo -e "${YELLOW}You may need to restart your session for Flatpak apps to appear in the menu.${NC}"
+        
+        # Verify installation
+        if flatpak --version &> /dev/null && flatpak remote-list | grep -q flathub; then
+            echo -e "${GREEN}✓ Flathub repository configured${NC}"
+        else
+            echo -e "${YELLOW}⚠ Flathub repository might need manual setup${NC}"
+        fi
+        
+        show_restart_instructions
         return 0
     else
         echo -e "${RED}✗ Failed to install Flatpak${NC}"
@@ -206,7 +348,13 @@ install_selected_system() {
     # Install in logical order
     if [ "$INSTALL_FLATPAK" = true ]; then
         install_flatpak
-        [ $? -ne 0 ] && success=false
+        local flatpak_result=$?
+        [ $flatpak_result -ne 0 ] && success=false
+        
+        # Verify installation if successful
+        if [ $flatpak_result -eq 0 ]; then
+            verify_flatpak_setup
+        fi
     fi
     
     if [ "$INSTALL_GNOME_TWEAKS" = true ]; then
@@ -262,7 +410,8 @@ install_selected_system() {
     if [ "$success" = true ]; then
         echo -e "\n${GREEN}✓ System tools installation completed!${NC}"
         if [ "$INSTALL_FLATPAK" = true ]; then
-            echo -e "${YELLOW}Note: You may need to restart your session for Flatpak to work properly.${NC}"
+            echo -e "${YELLOW}⚠ REMEMBER: Restart your system to complete Flatpak setup${NC}"
+            echo -e "${YELLOW}After restart, you can install Flatpak apps via GNOME Software or command line${NC}"
         fi
     else
         echo -e "\n${YELLOW}Some installations may have issues. Check above for errors.${NC}"
