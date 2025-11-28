@@ -10,6 +10,7 @@ NC='\033[0m'
 # Browser options
 BRAVE_INSTALLED=false
 CHROME_INSTALLED=false
+CHROMIUM_INSTALLED=false
 
 show_browser_menu() {
     clear
@@ -32,13 +33,15 @@ show_custom_browser_menu() {
     echo "╠══════════════════════════════════════╣"
     echo -e "║  ${GREEN}1${BLUE}  Brave Browser                  ║"
     echo -e "║  ${GREEN}2${BLUE}  Google Chrome                  ║"
-    echo -e "║  ${GREEN}3${BLUE}  Install Selected               ║"
+    echo -e "║  ${GREEN}3${BLUE}  Chromium Browser               ║"
+    echo -e "║  ${GREEN}4${BLUE}  Install Selected               ║"
     echo -e "║  ${GREEN}0${BLUE}  Back                          ║"
     echo "╚══════════════════════════════════════╝"
     echo -e "${NC}"
     echo -e "${YELLOW}Current selection:${NC}"
     echo -e "  Brave: $([ "$BRAVE_INSTALLED" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
     echo -e "  Chrome: $([ "$CHROME_INSTALLED" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
+    echo -e "  Chromium: $([ "$CHROMIUM_INSTALLED" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
 }
 
 install_brave() {
@@ -104,10 +107,33 @@ install_chrome() {
     fi
 }
 
+install_chromium() {
+    echo -e "\n${YELLOW}Installing Chromium Browser...${NC}"
+    
+    if command -v chromium-browser &> /dev/null || command -v chromium &> /dev/null; then
+        echo -e "${YELLOW}Chromium Browser is already installed. Skipping...${NC}"
+        return 0
+    fi
+
+    # Install Chromium from Ubuntu repositories
+    sudo apt update
+    sudo apt install chromium-browser -y
+
+    # Check if installation was successful
+    if command -v chromium-browser &> /dev/null || command -v chromium &> /dev/null; then
+        echo -e "${GREEN}✓ Chromium Browser installed successfully!${NC}"
+        return 0
+    else
+        echo -e "${RED}✗ Failed to install Chromium Browser${NC}"
+        return 1
+    fi
+}
+
 confirm_installation() {
     local selections=()
     [ "$BRAVE_INSTALLED" = true ] && selections+=("Brave Browser")
     [ "$CHROME_INSTALLED" = true ] && selections+=("Google Chrome")
+    [ "$CHROMIUM_INSTALLED" = true ] && selections+=("Chromium Browser")
     
     if [ ${#selections[@]} -eq 0 ]; then
         echo -e "${YELLOW}No browsers selected for installation.${NC}"
@@ -143,6 +169,11 @@ install_selected_browsers() {
         [ $? -ne 0 ] && success=false
     fi
     
+    if [ "$CHROMIUM_INSTALLED" = true ]; then
+        install_chromium
+        [ $? -ne 0 ] && success=false
+    fi
+    
     # Install additional browser utilities
     echo -e "\n${YELLOW}Installing browser utilities...${NC}"
     sudo apt install fonts-liberation libu2f-udev -y
@@ -166,6 +197,7 @@ while true; do
             # Install all browsers
             BRAVE_INSTALLED=true
             CHROME_INSTALLED=true
+            CHROMIUM_INSTALLED=true
             if confirm_installation; then
                 install_selected_browsers
                 read -p "Press Enter to continue..."
@@ -175,7 +207,7 @@ while true; do
             # Custom selection
             while true; do
                 show_custom_browser_menu
-                read -p "Choose an option (0-3): " custom_choice
+                read -p "Choose an option (0-4): " custom_choice
                 
                 case $custom_choice in
                     1)
@@ -185,6 +217,9 @@ while true; do
                         CHROME_INSTALLED=$([ "$CHROME_INSTALLED" = true ] && echo false || echo true)
                         ;;
                     3)
+                        CHROMIUM_INSTALLED=$([ "$CHROMIUM_INSTALLED" = true ] && echo false || echo true)
+                        ;;
+                    4)
                         if confirm_installation; then
                             install_selected_browsers
                             read -p "Press Enter to continue..."
