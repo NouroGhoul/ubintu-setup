@@ -12,6 +12,8 @@ INSTALL_FLATPAK=false
 INSTALL_GNOME_TWEAKS=false
 INSTALL_TIMESHIFT=false
 INSTALL_PROTON_VPN=false
+INSTALL_PAVUCONTROL=false
+CREATE_PAVUCONTROL_SHORTCUT=true
 
 # Ubuntu version detection functions
 get_ubuntu_version() {
@@ -55,7 +57,8 @@ show_custom_system_menu() {
     echo -e "║  ${GREEN}2${BLUE}  GNOME Tweaks & Extensions      ║"
     echo -e "║  ${GREEN}3${BLUE}  Timeshift System Backup        ║"
     echo -e "║  ${GREEN}4${BLUE}  Proton VPN                     ║"
-    echo -e "║  ${GREEN}5${BLUE}  Install Selected               ║"
+    echo -e "║  ${GREEN}5${BLUE}  Pavucontrol (Audio Control)    ║"
+    echo -e "║  ${GREEN}6${BLUE}  Install Selected               ║"
     echo -e "║  ${GREEN}0${BLUE}  Back                          ║"
     echo "╚══════════════════════════════════════╝"
     echo -e "${NC}"
@@ -64,6 +67,10 @@ show_custom_system_menu() {
     echo -e "  GNOME Tweaks: $([ "$INSTALL_GNOME_TWEAKS" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
     echo -e "  Timeshift: $([ "$INSTALL_TIMESHIFT" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
     echo -e "  Proton VPN: $([ "$INSTALL_PROTON_VPN" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
+    echo -e "  Pavucontrol: $([ "$INSTALL_PAVUCONTROL" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
+    if [ "$INSTALL_PAVUCONTROL" = true ]; then
+        echo -e "  Super+G Shortcut: $([ "$CREATE_PAVUCONTROL_SHORTCUT" = true ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}")"
+    fi
 }
 
 install_flatpak_plugin() {
@@ -304,12 +311,83 @@ install_proton_vpn() {
     fi
 }
 
+install_pavucontrol() {
+    echo -e "\n${YELLOW}Installing Pavucontrol (Audio Control - Apps Sound Control)...${NC}"
+    
+    if command -v pavucontrol &> /dev/null; then
+        echo -e "${YELLOW}Pavucontrol is already installed.${NC}"
+        return 0
+    fi
+
+    sudo apt install pavucontrol -y
+
+    if command -v pavucontrol &> /dev/null; then
+        echo -e "${GREEN}✓ Pavucontrol (Audio Control) installed successfully!${NC}"
+        
+        # Ask user if they want to create keyboard shortcut
+        if [ "$CREATE_PAVUCONTROL_SHORTCUT" = true ]; then
+            echo -e "\n${YELLOW}Would you like to create a keyboard shortcut (Super+G) for Pavucontrol?${NC}"
+            read -p "Create shortcut? (y/n, default: y): " create_shortcut
+            if [[ $create_shortcut =~ ^[Nn]$ ]]; then
+                echo -e "${YELLOW}Skipping keyboard shortcut creation.${NC}"
+            else
+                create_pavucontrol_shortcut
+            fi
+        fi
+        return 0
+    else
+        echo -e "${RED}✗ Failed to install Pavucontrol${NC}"
+        return 1
+    fi
+}
+
+create_pavucontrol_shortcut() {
+    echo -e "${YELLOW}Creating keyboard shortcut (Super+G) for Pavucontrol...${NC}"
+    
+    # Check if dconf is available
+    if ! command -v dconf &> /dev/null; then
+        echo -e "${YELLOW}dconf not available, installing...${NC}"
+        sudo apt install dconf-cli -y
+    fi
+    
+    # Create custom keybinding for Pavucontrol
+    local custom_keybindings=$(dconf read /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings 2>/dev/null || echo "[]")
+    
+    # Find next available slot
+    local index=0
+    while echo "$custom_keybindings" | grep -q "/custom${index}/"; do
+        ((index++))
+    done
+    
+    # Create the new keybinding path
+    local new_binding="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom${index}/"
+    
+    # Update the custom keybindings list
+    if [ "$custom_keybindings" = "[]" ]; then
+        custom_keybindings="['$new_binding']"
+    else
+        custom_keybindings=$(echo "$custom_keybindings" | sed "s/\]/, '$new_binding']/")
+    fi
+    
+    # Set the custom keybindings list
+    dconf write /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings "$custom_keybindings"
+    
+    # Configure the specific keybinding
+    dconf write "${new_binding}name" "'Pavucontrol Audio Control'"
+    dconf write "${new_binding}command" "'pavucontrol'"
+    dconf write "${new_binding}binding" "'<Super>g'"
+    
+    echo -e "${GREEN}✓ Keyboard shortcut created: Super+G to open Pavucontrol${NC}"
+    echo -e "${YELLOW}Note: You may need to log out and log back in for the shortcut to take effect${NC}"
+}
+
 confirm_installation() {
     local selections=()
     [ "$INSTALL_FLATPAK" = true ] && selections+=("Flatpak Package Manager")
     [ "$INSTALL_GNOME_TWEAKS" = true ] && selections+=("GNOME Tweaks & Extensions")
     [ "$INSTALL_TIMESHIFT" = true ] && selections+=("Timeshift System Backup")
     [ "$INSTALL_PROTON_VPN" = true ] && selections+=("Proton VPN")
+    [ "$INSTALL_PAVUCONTROL" = true ] && selections+=("Pavucontrol (Audio Control - Apps Sound Control)")
     
     if [ ${#selections[@]} -eq 0 ]; then
         echo -e "${YELLOW}No system tools selected for installation.${NC}"
@@ -320,6 +398,10 @@ confirm_installation() {
     for item in "${selections[@]}"; do
         echo -e "  ${GREEN}✓${NC} $item"
     done
+    
+    if [ "$INSTALL_PAVUCONTROL" = true ]; then
+        echo -e "  ${GREEN}⚡${NC} Keyboard shortcut Super+G will be offered for Pavucontrol"
+    fi
     
     echo -e "\n${YELLOW}Are you sure you want to proceed? (y/n)${NC}"
     read -p "Choice: " confirm
@@ -372,6 +454,11 @@ install_selected_system() {
         [ $? -ne 0 ] && success=false
     fi
     
+    if [ "$INSTALL_PAVUCONTROL" = true ]; then
+        install_pavucontrol
+        [ $? -ne 0 ] && success=false
+    fi
+    
     # Verify installations
     echo -e "\n${YELLOW}Verifying installations...${NC}"
     
@@ -407,11 +494,22 @@ install_selected_system() {
         fi
     fi
     
+    if [ "$INSTALL_PAVUCONTROL" = true ]; then
+        if command -v pavucontrol &> /dev/null; then
+            echo -e "${GREEN}✓ Pavucontrol: Installed${NC}"
+        else
+            echo -e "${RED}✗ Pavucontrol: Not found${NC}"
+        fi
+    fi
+    
     if [ "$success" = true ]; then
         echo -e "\n${GREEN}✓ System tools installation completed!${NC}"
         if [ "$INSTALL_FLATPAK" = true ]; then
             echo -e "${YELLOW}⚠ REMEMBER: Restart your system to complete Flatpak setup${NC}"
             echo -e "${YELLOW}After restart, you can install Flatpak apps via GNOME Software or command line${NC}"
+        fi
+        if [ "$INSTALL_PAVUCONTROL" = true ]; then
+            echo -e "${YELLOW}🎵 Pavucontrol: Use Super+G to open audio controls (after logout/login)${NC}"
         fi
     else
         echo -e "\n${YELLOW}Some installations may have issues. Check above for errors.${NC}"
@@ -432,6 +530,7 @@ while true; do
             INSTALL_GNOME_TWEAKS=true
             INSTALL_TIMESHIFT=true
             INSTALL_PROTON_VPN=true
+            INSTALL_PAVUCONTROL=true
             if confirm_installation; then
                 install_selected_system
                 read -p "Press Enter to continue..."
@@ -441,7 +540,7 @@ while true; do
             # Custom selection
             while true; do
                 show_custom_system_menu
-                read -p "Choose an option (0-5): " custom_choice
+                read -p "Choose an option (0-6): " custom_choice
                 
                 case $custom_choice in
                     1)
@@ -457,6 +556,20 @@ while true; do
                         INSTALL_PROTON_VPN=$([ "$INSTALL_PROTON_VPN" = true ] && echo false || echo true)
                         ;;
                     5)
+                        INSTALL_PAVUCONTROL=$([ "$INSTALL_PAVUCONTROL" = true ] && echo false || echo true)
+                        if [ "$INSTALL_PAVUCONTROL" = true ]; then
+                            echo -e "\n${YELLOW}Create Super+G keyboard shortcut for Pavucontrol?${NC}"
+                            read -p "Create shortcut? (y/n, default: y): " shortcut_choice
+                            if [[ $shortcut_choice =~ ^[Nn]$ ]]; then
+                                CREATE_PAVUCONTROL_SHORTCUT=false
+                                echo -e "${YELLOW}Keyboard shortcut creation disabled for Pavucontrol${NC}"
+                            else
+                                CREATE_PAVUCONTROL_SHORTCUT=true
+                                echo -e "${GREEN}Keyboard shortcut will be offered during installation${NC}"
+                            fi
+                        fi
+                        ;;
+                    6)
                         if confirm_installation; then
                             install_selected_system
                             read -p "Press Enter to continue..."
