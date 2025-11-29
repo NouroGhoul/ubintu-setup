@@ -5,6 +5,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
 # Scripts directory
@@ -31,88 +34,329 @@ show_menu() {
     echo -e "${NC}"
 }
 
-# Function to run script with error handling
-run_script() {
-    local script_name=$1
-    local description=$2
-    local auto_mode=$3
+# Function to get download method for a specific app
+get_download_method() {
+    local app_name="$1"
+    local current_script="$2"
     
-    echo -e "\n${YELLOW}Running: $description...${NC}"
-    
-    if [ -f "$script_path" ] && [ -x "$script_path" ]; then
-        if [ "$auto_mode" = true ]; then
-            # For automated mode, we'll handle each script specially
-            run_automated_script "$script_name" "$description"
-        else
-            ./"$script_path"
-            if [ $? -eq 0 ]; then
-                echo -e "${GREEN}✓ $description completed successfully!${NC}"
-            else
-                echo -e "${RED}✗ $description failed!${NC}"
-            fi
-        fi
-    else
-        echo -e "${RED}✗ Script '$script_path' not found or not executable!${NC}"
-        echo -e "${YELLOW}Make sure you're in the correct directory and scripts are executable.${NC}"
-    fi
-    
-    if [ "$auto_mode" != true ]; then
-        read -p "Press Enter to continue..."
-    fi
+    case $app_name in
+        # System Tools
+        "Flatpak Package Manager"|"GNOME Tweaks & Extensions"|"Timeshift System Backup"|"Pavucontrol Audio Control")
+            echo "apt"
+            ;;
+        "Proton VPN")
+            echo "deb"
+            ;;
+        
+        # Browsers
+        "Brave Browser")
+            echo "apt (official repo)"
+            ;;
+        "Google Chrome")
+            echo "deb"
+            ;;
+        "Chromium Browser"|"Browser Utilities")
+            echo "apt"
+            ;;
+        
+        # Communication
+        "Discord")
+            echo "deb (with snap fallback)"
+            ;;
+        "Telegram")
+            echo "snap (with apt fallback)"
+            ;;
+        
+        # Media
+        "VLC Media Player"|"OBS Studio"|"Steam"|"qBittorrent")
+            echo "apt"
+            ;;
+        "LocalSend")
+            echo "snap (with apt fallback)"
+            ;;
+        
+        # Development
+        "Visual Studio Code")
+            echo "snap (with deb fallback)"
+            ;;
+        "Node.js + nvm")
+            echo "curl + nvm"
+            ;;
+        "Python3 + pip"|"Git"|"Tmux"|"Vim")
+            echo "apt"
+            ;;
+        
+        # Themes
+        "Graphite GTK Theme"|"Tela Circle Icons"|"GDM Theme"|"GNOME Shell Customization")
+            echo "git + script"
+            ;;
+        "Graphite Wallpapers")
+            echo "git + copy"
+            ;;
+        
+        # Shell
+        "Zsh Shell"|"Oh My Zsh Framework"|"Powerlevel10k Theme"|"Auto Suggestions"|"Syntax Highlighting"|"Auto Completions")
+            echo "git + script"
+            ;;
+        
+        *)
+            case $current_script in
+                "System & Package Management")
+                    echo "apt/deb"
+                    ;;
+                "Theme Installation")
+                    echo "git + script"
+                    ;;
+                "Web Browsers")
+                    echo "apt/deb"
+                    ;;
+                "Communication Apps")
+                    echo "deb/snap"
+                    ;;
+                "Media & Entertainment")
+                    echo "apt/snap"
+                    ;;
+                "Development Tools")
+                    echo "snap/curl/apt"
+                    ;;
+                "Terminal & Shell")
+                    echo "git + script"
+                    ;;
+                *)
+                    echo "various"
+                    ;;
+            esac
+            ;;
+    esac
 }
 
-# Function to run scripts in automated mode
-run_automated_script() {
-    local script_name=$1
-    local description=$2
-    local script_path="$SCRIPTS_DIR/$script_name"
-    
-    case $script_name in
-        "system-setup.sh")
-            echo -e "${YELLOW}Installing all system tools automatically...${NC}"
-            # Run system setup with all options selected
-            echo "1" | ./"$script_path" > /dev/null 2>&1
+# Function to get download method color
+get_method_color() {
+    local method="$1"
+    case $method in
+        "apt"|"apt (official repo)")
+            echo "${GREEN}"
             ;;
-        "theme-setup.sh")
-            echo -e "${YELLOW}Installing theme automatically...${NC}"
-            # Run theme setup automatically
-            ./"$script_path" > /dev/null 2>&1
+        "snap"|"snap (with apt fallback)"|"snap (with deb fallback)")
+            echo "${PURPLE}"
             ;;
-        "browsers-setup.sh")
-            echo -e "${YELLOW}Installing all browsers automatically...${NC}"
-            # Run browsers setup with all options selected
-            echo "1" | ./"$script_path" > /dev/null 2>&1
+        "deb"|"deb (with snap fallback)")
+            echo "${BLUE}"
             ;;
-        "communication-setup.sh")
-            echo -e "${YELLOW}Installing communication apps automatically...${NC}"
-            # Run communication setup with all options selected
-            echo "1" | ./"$script_path" > /dev/null 2>&1
+        "git + script"|"git + copy")
+            echo "${ORANGE}"
             ;;
-        "media-setup.sh")
-            echo -e "${YELLOW}Installing media apps automatically...${NC}"
-            # Run media setup with all options selected
-            echo "1" | ./"$script_path" > /dev/null 2>&1
-            ;;
-        "dev-setup.sh")
-            echo -e "${YELLOW}Installing development tools automatically...${NC}"
-            # Run dev setup with all options selected
-            echo "1" | ./"$script_path" > /dev/null 2>&1
-            ;;
-        "shell-setup.sh")
-            echo -e "${YELLOW}Installing shell enhancements automatically...${NC}"
-            # Run shell setup with all options selected
-            echo "1" | ./"$script_path" > /dev/null 2>&1
+        "curl + nvm")
+            echo "${CYAN}"
             ;;
         *)
-            # Default fallback
-            ./"$script_path" > /dev/null 2>&1
+            echo "${YELLOW}"
+            ;;
+    esac
+}
+
+# Function to show loading screen
+show_loading_screen() {
+    local current_script="$1"
+    local current_step="$2"
+    local total_steps="$3"
+    local completed_scripts="$4"
+    local current_script_items="$5"
+    local current_item="$6"
+    
+    clear
+    echo -e "${BLUE}"
+    echo "╔════════════════════════════════════════════════════════════════════╗"
+    echo "║                   🚀 AUTOMATED SETUP PROGRESS                      ║"
+    echo "╠════════════════════════════════════════════════════════════════════╣"
+    echo -e "║  ${CYAN}Progress:${NC} $current_step/$total_steps scripts completed                 ║"
+    echo -e "║  ${CYAN}Current Script:${NC} ${YELLOW}$current_script${NC}                         ║"
+    
+    # Get download method for current item
+    local download_method=$(get_download_method "$current_item" "$current_script")
+    local method_color=$(get_method_color "$download_method")
+    
+    echo -e "║  ${CYAN}Installing:${NC} ${GREEN}$current_item${NC}                               ║"
+    echo -e "║  ${CYAN}Method:${NC} ${method_color}$download_method${NC}                                   ║"
+    echo "╠════════════════════════════════════════════════════════════════════╣"
+    
+    # Show current script items being installed with their methods
+    if [ -n "$current_script_items" ]; then
+        echo -e "║  ${PURPLE}Current Script Components:${NC}                                    ║"
+        IFS='|' read -ra ITEMS <<< "$current_script_items"
+        for item in "${ITEMS[@]}"; do
+            local item_method=$(get_download_method "$item" "$current_script")
+            local item_color=$(get_method_color "$item_method")
+            
+            if [[ "$item" == "$current_item"* ]] || [[ "$current_item" == "$item"* ]]; then
+                echo -e "║    ${YELLOW}⏳ $item${NC}                                      ║"
+                echo -e "║      ${item_color}↳ Method: $item_method${NC}                              ║"
+            else
+                echo -e "║    ${GREEN}✓ $item${NC}                                        ║"
+            fi
+        done
+    fi
+    
+    echo "╠════════════════════════════════════════════════════════════════════╣"
+    echo -e "║  ${GREEN}✅ Completed Scripts:${NC}                                             ║"
+    IFS='|' read -ra COMPLETED <<< "$completed_scripts"
+    for script in "${COMPLETED[@]}"; do
+        if [ -n "$script" ]; then
+            echo -e "║    ${GREEN}✓ $script${NC}                                              ║"
+        fi
+    done
+    
+    # Show remaining scripts
+    local remaining_scripts=("System Tools" "Themes" "Browsers" "Communication" "Media" "Development" "Shell")
+    for completed in "${COMPLETED[@]}"; do
+        for i in "${!remaining_scripts[@]}"; do
+            if [[ " ${remaining_scripts[i]} " == *"$completed"* ]]; then
+                unset 'remaining_scripts[i]'
+            fi
+        done
+    done
+    
+    if [ ${#remaining_scripts[@]} -gt 0 ]; then
+        echo "╠════════════════════════════════════════════════════════════════════╣"
+        echo -e "║  ${YELLOW}📋 Remaining Scripts:${NC}                                           ║"
+        for script in "${remaining_scripts[@]}"; do
+            if [ -n "$script" ]; then
+                echo -e "║    ${YELLOW}⏳ $script${NC}                                              ║"
+            fi
+        done
+    fi
+    
+    # Show download method legend
+    echo "╠════════════════════════════════════════════════════════════════════╣"
+    echo -e "║  ${CYAN}📦 DOWNLOAD METHODS LEGEND:${NC}                                        ║"
+    echo -e "║    ${GREEN}apt${NC} - Ubuntu package manager                                  ║"
+    echo -e "║    ${PURPLE}snap${NC} - Snap packages                                         ║"
+    echo -e "║    ${BLUE}deb${NC} - Direct .deb package download                            ║"
+    echo -e "║    ${ORANGE}git${NC} - Git repository + installation script                  ║"
+    echo -e "║    ${CYAN}curl${NC} - Direct download via curl                              ║"
+    echo "╚════════════════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
+}
+
+# Function to run scripts in automated mode with progress tracking
+run_automated_script() {
+    local script_name="$1"
+    local description="$2"
+    local current_step="$3"
+    local total_steps="$4"
+    local completed_scripts="$5"
+    local script_path="$SCRIPTS_DIR/$script_name"
+    
+    # Define what each script installs
+    case $script_name in
+        "system-setup.sh")
+            local items=("Flatpak Package Manager|GNOME Tweaks & Extensions|Timeshift System Backup|Proton VPN|Pavucontrol Audio Control")
+            local current_item="Flatpak Package Manager"
+            ;;
+        "theme-setup.sh")
+            local items=("Graphite GTK Theme|Tela Circle Icons|Graphite Wallpapers|GDM Theme|GNOME Shell Customization")
+            local current_item="Graphite GTK Theme"
+            ;;
+        "browsers-setup.sh")
+            local items=("Brave Browser|Google Chrome|Chromium Browser|Browser Utilities")
+            local current_item="Brave Browser"
+            ;;
+        "communication-setup.sh")
+            local items=("Discord|Telegram")
+            local current_item="Discord"
+            ;;
+        "media-setup.sh")
+            local items=("VLC Media Player|OBS Studio|Steam|qBittorrent|LocalSend")
+            local current_item="VLC Media Player"
+            ;;
+        "dev-setup.sh")
+            local items=("Visual Studio Code|Node.js + nvm|Python3 + pip|Git|Tmux|Vim")
+            local current_item="Visual Studio Code"
+            ;;
+        "shell-setup.sh")
+            local items=("Zsh Shell|Oh My Zsh Framework|Powerlevel10k Theme|Auto Suggestions|Syntax Highlighting|Auto Completions")
+            local current_item="Zsh Shell"
+            ;;
+        *)
+            local items=("Various Components")
+            local current_item="Various Components"
             ;;
     esac
     
-    if [ $? -eq 0 ]; then
+    # Show initial loading screen
+    show_loading_screen "$description" "$current_step" "$total_steps" "$completed_scripts" "$items" "$current_item"
+    
+    # Create a temporary file to capture output
+    local temp_file=$(mktemp)
+    
+    # Run the script in background and capture output
+    {
+        case $script_name in
+            "system-setup.sh")
+                echo "1" | timeout 300 ./"$script_path" 2>&1
+                ;;
+            "theme-setup.sh")
+                # For theme setup, we need to handle the interactive prompts
+                {
+                    echo "y"   # Yes to icons
+                    echo "y"   # Yes to wallpapers
+                    sleep 1
+                } | timeout 300 ./"$script_path" 2>&1
+                ;;
+            "browsers-setup.sh")
+                echo "1" | timeout 300 ./"$script_path" 2>&1
+                ;;
+            "communication-setup.sh")
+                echo "1" | timeout 300 ./"$script_path" 2>&1
+                ;;
+            "media-setup.sh")
+                echo "1" | timeout 300 ./"$script_path" 2>&1
+                ;;
+            "dev-setup.sh")
+                echo "1" | timeout 300 ./"$script_path" 2>&1
+                ;;
+            "shell-setup.sh")
+                echo "1" | timeout 300 ./"$script_path" 2>&1
+                ;;
+            *)
+                timeout 300 ./"$script_path" 2>&1
+                ;;
+        esac
+    } > "$temp_file" 2>&1 &
+    
+    local pid=$!
+    
+    # Update progress while the script is running
+    local item_index=0
+    IFS='|' read -ra ITEM_ARRAY <<< "$items"
+    
+    while kill -0 "$pid" 2>/dev/null; do
+        # Rotate through items to show progress
+        current_item="${ITEM_ARRAY[$item_index]}"
+        show_loading_screen "$description" "$current_step" "$total_steps" "$completed_scripts" "$items" "$current_item"
+        
+        # Move to next item, loop back to start
+        ((item_index++))
+        if [ $item_index -ge ${#ITEM_ARRAY[@]} ]; then
+            item_index=0
+        fi
+        
+        sleep 3
+    done
+    
+    # Wait for the process to complete and get exit status
+    wait "$pid"
+    local exit_status=$?
+    
+    # Clean up temp file
+    rm -f "$temp_file"
+    
+    if [ $exit_status -eq 0 ]; then
         echo -e "${GREEN}✓ $description completed successfully!${NC}"
+        return 0
     else
-        echo -e "${RED}✗ $description failed!${NC}"
+        echo -e "${RED}✗ $description failed or timed out!${NC}"
+        return 1
     fi
 }
 
@@ -134,33 +378,39 @@ fully_automated_setup() {
     # Start installation timer
     local start_time=$(date +%s)
     
-    # 1. System & Package Management
-    echo -e "\n${BLUE}[1/7] Installing System Tools...${NC}"
-    run_automated_script "system-setup.sh" "System & Package Management"
+    # Define the installation order
+    local scripts=(
+        "system-setup.sh:System & Package Management"
+        "theme-setup.sh:Theme Installation" 
+        "browsers-setup.sh:Web Browsers"
+        "communication-setup.sh:Communication Apps"
+        "media-setup.sh:Media & Entertainment"
+        "dev-setup.sh:Development Tools"
+        "shell-setup.sh:Terminal & Shell"
+    )
     
-    # 2. Theme Installation
-    echo -e "\n${BLUE}[2/7] Installing Themes...${NC}"
-    run_automated_script "theme-setup.sh" "Theme Installation"
+    local total_steps=${#scripts[@]}
+    local completed_scripts=""
+    local success_count=0
     
-    # 3. Web Browsers
-    echo -e "\n${BLUE}[3/7] Installing Web Browsers...${NC}"
-    run_automated_script "browsers-setup.sh" "Web Browsers"
-    
-    # 4. Communication Apps
-    echo -e "\n${BLUE}[4/7] Installing Communication Apps...${NC}"
-    run_automated_script "communication-setup.sh" "Communication Apps"
-    
-    # 5. Media & Entertainment
-    echo -e "\n${BLUE}[5/7] Installing Media Apps...${NC}"
-    run_automated_script "media-setup.sh" "Media & Entertainment"
-    
-    # 6. Development Tools
-    echo -e "\n${BLUE}[6/7] Installing Development Tools...${NC}"
-    run_automated_script "dev-setup.sh" "Development Tools"
-    
-    # 7. Terminal & Shell
-    echo -e "\n${BLUE}[7/7] Installing Shell Enhancements...${NC}"
-    run_automated_script "shell-setup.sh" "Terminal & Shell"
+    # Run each script in order
+    for ((i=0; i<${#scripts[@]}; i++)); do
+        IFS=':' read -ra SCRIPT_INFO <<< "${scripts[$i]}"
+        local script_name="${SCRIPT_INFO[0]}"
+        local description="${SCRIPT_INFO[1]}"
+        local current_step=$((i + 1))
+        
+        echo -e "\n${BLUE}[$current_step/$total_steps] Installing $description...${NC}"
+        
+        # Run the script with progress tracking
+        if run_automated_script "$script_name" "$description" "$current_step" "$total_steps" "$completed_scripts"; then
+            ((success_count++))
+            completed_scripts="${completed_scripts}|${description}"
+        fi
+        
+        # Small delay between scripts
+        sleep 2
+    done
     
     # Calculate total time
     local end_time=$(date +%s)
@@ -168,29 +418,76 @@ fully_automated_setup() {
     local minutes=$((total_time / 60))
     local seconds=$((total_time % 60))
     
-    echo -e "\n${GREEN}=== AUTOMATED SETUP COMPLETED ===${NC}"
-    echo -e "${GREEN}✓ All components installed successfully!${NC}"
-    echo -e "${YELLOW}Total time: ${minutes}m ${seconds}s${NC}"
+    # Show final results
+    clear
+    echo -e "${BLUE}"
+    echo "╔════════════════════════════════════════════════════════════════════╗"
+    echo "║                   🎉 SETUP COMPLETED!                              ║"
+    echo "╠════════════════════════════════════════════════════════════════════╣"
+    echo -e "║  ${GREEN}Successfully installed: $success_count/$total_steps categories${NC}             ║"
+    echo -e "║  ${YELLOW}Total time: ${minutes}m ${seconds}s${NC}                                      ║"
+    echo "╠════════════════════════════════════════════════════════════════════╣"
     
-    # Show summary
-    echo -e "\n${BLUE}=== INSTALLATION SUMMARY ===${NC}"
-    echo -e "${GREEN}✓ System Tools: Flatpak, GNOME Tweaks, Timeshift, Proton VPN, Pavucontrol${NC}"
-    echo -e "${GREEN}✓ Themes: Graphite GTK Theme, Tela Circle Icons, Wallpapers${NC}"
-    echo -e "${GREEN}✓ Browsers: Brave, Chrome, Chromium${NC}"
-    echo -e "${GREEN}✓ Communication: Discord, Telegram${NC}"
-    echo -e "${GREEN}✓ Media: VLC, OBS Studio, Steam, qBittorrent, LocalSend${NC}"
-    echo -e "${GREEN}✓ Development: VS Code, Node.js, Python, Git, Tmux, Vim${NC}"
-    echo -e "${GREEN}✓ Shell: Zsh, Oh My Zsh, Powerlevel10k, plugins${NC}"
+    # Installation summary with methods
+    echo -e "║  ${GREEN}✅ INSTALLED COMPONENTS:${NC}                                         ║"
+    echo -e "║  ${GREEN}┌─ System Tools:${NC}                                                 ║"
+    echo -e "║  ${GREEN}│  ${GREEN}• Flatpak${NC} (apt) | ${GREEN}• GNOME Tweaks${NC} (apt) | ${GREEN}• Timeshift${NC} (apt)        ║"
+    echo -e "║  ${GREEN}│  ${BLUE}• Proton VPN${NC} (deb) | ${GREEN}• Pavucontrol${NC} (apt) + ${GREEN}Super+G${NC} shortcut ║"
+    echo -e "║  ${GREEN}├─ Themes:${NC}                                                       ║"
+    echo -e "║  ${GREEN}│  ${ORANGE}• Graphite GTK${NC} (git) | ${ORANGE}• Tela Icons${NC} (git) | ${ORANGE}• Wallpapers${NC} (git) ║"
+    echo -e "║  ${GREEN}├─ Browsers:${NC}                                                     ║"
+    echo -e "║  ${GREEN}│  ${GREEN}• Brave${NC} (apt) | ${BLUE}• Chrome${NC} (deb) | ${GREEN}• Chromium${NC} (apt)           ║"
+    echo -e "║  ${GREEN}├─ Communication:${NC}                                                ║"
+    echo -e "║  ${GREEN}│  ${BLUE}• Discord${NC} (deb+snap) | ${PURPLE}• Telegram${NC} (snap+apt)                     ║"
+    echo -e "║  ${GREEN}├─ Media:${NC}                                                        ║"
+    echo -e "║  ${GREEN}│  ${GREEN}• VLC${NC} (apt) | ${GREEN}• OBS Studio${NC} (apt) | ${GREEN}• Steam${NC} (apt)            ║"
+    echo -e "║  ${GREEN}│  ${GREEN}• qBittorrent${NC} (apt) | ${PURPLE}• LocalSend${NC} (snap+apt)                      ║"
+    echo -e "║  ${GREEN}├─ Development:${NC}                                                  ║"
+    echo -e "║  ${GREEN}│  ${PURPLE}• VS Code${NC} (snap+deb) | ${CYAN}• Node.js${NC} (curl+nvm) | ${GREEN}• Python${NC} (apt) ║"
+    echo -e "║  ${GREEN}│  ${GREEN}• Git${NC} (apt) | ${GREEN}• Tmux${NC} (apt) | ${GREEN}• Vim${NC} (apt)                      ║"
+    echo -e "║  ${GREEN}└─ Shell:${NC}                                                        ║"
+    echo -e "║  ${GREEN}   ${ORANGE}• Zsh + Oh My Zsh + Powerlevel10k${NC} (git+script) + plugins        ║"
     
-    echo -e "\n${YELLOW}=== NEXT STEPS ===${NC}"
-    echo -e "1. ${GREEN}Restart your computer${NC} to apply all changes"
-    echo -e "2. ${GREEN}Open GNOME Tweaks${NC} to customize your theme"
-    echo -e "3. ${GREEN}Run 'p10k configure'${NC} to customize your shell prompt"
-    echo -e "4. ${GREEN}Use Super+G${NC} to open Pavucontrol audio mixer"
+    echo "╠════════════════════════════════════════════════════════════════════╣"
+    echo -e "║  ${YELLOW}🚀 NEXT STEPS:${NC}                                                   ║"
+    echo -e "║  ${YELLOW}1. Restart your computer${NC} to apply all changes                     ║"
+    echo -e "║  ${YELLOW}2. Open GNOME Tweaks${NC} to customize your theme                      ║"
+    echo -e "║  ${YELLOW}3. Run 'p10k configure'${NC} to customize shell prompt                 ║"
+    echo -e "║  ${YELLOW}4. Use Super+G${NC} to open Pavucontrol audio mixer                    ║"
+    echo -e "║  ${YELLOW}5. Launch your new apps from the application menu!${NC}                ║"
+    echo "╚════════════════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
     
-    echo -e "\n${GREEN}🎉 Your Ubuntu system is now fully set up and ready to use!${NC}"
+    if [ $success_count -eq $total_steps ]; then
+        echo -e "${GREEN}🎉 All components installed successfully! Your system is ready!${NC}"
+    else
+        echo -e "${YELLOW}⚠ Some components may have issues. Check above for details.${NC}"
+    fi
     
     read -p "Press Enter to return to main menu..."
+}
+
+# Function to run script with error handling (for non-automated mode)
+run_script() {
+    local script_name=$1
+    local description=$2
+    local script_path="$SCRIPTS_DIR/$script_name"
+    
+    echo -e "\n${YELLOW}Running: $description...${NC}"
+    
+    if [ -f "$script_path" ] && [ -x "$script_path" ]; then
+        ./"$script_path"
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓ $description completed successfully!${NC}"
+        else
+            echo -e "${RED}✗ $description failed!${NC}"
+        fi
+    else
+        echo -e "${RED}✗ Script '$script_path' not found or not executable!${NC}"
+        echo -e "${YELLOW}Make sure you're in the correct directory and scripts are executable.${NC}"
+    fi
+    
+    read -p "Press Enter to continue..."
 }
 
 # Check if scripts directory exists
@@ -207,37 +504,37 @@ while true; do
     
     case $choice in
         1)
-            run_script "system-setup.sh" "System & Package Management" false
+            run_script "system-setup.sh" "System & Package Management"
             ;;
         2)
-            run_script "theme-setup.sh" "Theme Installation" false
+            run_script "theme-setup.sh" "Theme Installation"
             ;;
         3)
-            run_script "browsers-setup.sh" "Web Browsers" false
+            run_script "browsers-setup.sh" "Web Browsers"
             ;;
         4)
-            run_script "communication-setup.sh" "Communication Apps" false
+            run_script "communication-setup.sh" "Communication Apps"
             ;;
         5)
-            run_script "media-setup.sh" "Media & Entertainment" false
+            run_script "media-setup.sh" "Media & Entertainment"
             ;;
         6)
-            run_script "dev-setup.sh" "Development Tools" false
+            run_script "dev-setup.sh" "Development Tools"
             ;;
         7)
-            run_script "shell-setup.sh" "Terminal & Shell" false
+            run_script "shell-setup.sh" "Terminal & Shell"
             ;;
         8)
             echo -e "\n${YELLOW}Running ALL setup scripts...${NC}"
             echo -e "${YELLOW}This will take a while. Please wait...${NC}"
             
-            run_script "system-setup.sh" "System & Package Management" false
-            run_script "theme-setup.sh" "Theme Installation" false
-            run_script "browsers-setup.sh" "Web Browsers" false
-            run_script "communication-setup.sh" "Communication Apps" false
-            run_script "media-setup.sh" "Media & Entertainment" false
-            run_script "dev-setup.sh" "Development Tools" false
-            run_script "shell-setup.sh" "Terminal & Shell" false
+            run_script "system-setup.sh" "System & Package Management"
+            run_script "theme-setup.sh" "Theme Installation"
+            run_script "browsers-setup.sh" "Web Browsers"
+            run_script "communication-setup.sh" "Communication Apps"
+            run_script "media-setup.sh" "Media & Entertainment"
+            run_script "dev-setup.sh" "Development Tools"
+            run_script "shell-setup.sh" "Terminal & Shell"
             
             echo -e "${GREEN}✓ All setup scripts completed!${NC}"
             read -p "Press Enter to continue..."
