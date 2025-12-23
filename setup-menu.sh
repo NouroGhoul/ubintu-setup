@@ -27,8 +27,9 @@ show_menu() {
     echo -e "║  ${GREEN}5${BLUE}  Media & Entertainment          ║"
     echo -e "║  ${GREEN}6${BLUE}  Development Tools              ║"
     echo -e "║  ${GREEN}7${BLUE}  Terminal & Shell               ║"
-    echo -e "║  ${GREEN}8${BLUE}  Run ALL Setup Scripts          ║"
-    echo -e "║  ${GREEN}9${BLUE}  🚀 FULLY AUTOMATED SETUP       ║"
+    echo -e "║  ${GREEN}8${BLUE}  Docker Setup                   ║"
+    echo -e "║  ${GREEN}9${BLUE}  Run ALL Setup Scripts          ║"
+    echo -e "║  ${GREEN}10${BLUE} 🚀 FULLY AUTOMATED SETUP       ║"
     echo -e "║  ${GREEN}0${BLUE}  Exit                           ║"
     echo "╚══════════════════════════════════════╝"
     echo -e "${NC}"
@@ -86,6 +87,17 @@ get_download_method() {
             echo "apt"
             ;;
         
+        # Docker
+        "Docker Engine")
+            echo "apt (official Docker repo)"
+            ;;
+        "Docker Desktop")
+            echo "deb (GUI app)"
+            ;;
+        "Docker Compose")
+            echo "apt (plugin)"
+            ;;
+        
         # Themes
         "Graphite GTK Theme"|"Tela Circle Icons"|"GDM Theme"|"GNOME Shell Customization")
             echo "git + script"
@@ -122,6 +134,9 @@ get_download_method() {
                 "Terminal & Shell")
                     echo "git + script"
                     ;;
+                "Docker Setup")
+                    echo "apt/deb"
+                    ;;
                 *)
                     echo "various"
                     ;;
@@ -134,19 +149,19 @@ get_download_method() {
 get_method_color() {
     local method="$1"
     case $method in
-        "apt"|"apt (official repo)")
+        "apt"|"apt (official repo)"|"apt (official Docker repo)")
             echo "${GREEN}"
             ;;
         "snap"|"snap (with apt fallback)"|"snap (with deb fallback)")
             echo "${PURPLE}"
             ;;
-        "deb"|"deb (with snap fallback)")
+        "deb"|"deb (with snap fallback)"|"deb (GUI app)")
             echo "${BLUE}"
             ;;
         "git + script"|"git + copy")
             echo "${ORANGE}"
             ;;
-        "curl + nvm")
+        "curl + nvm"|"apt (plugin)")
             echo "${CYAN}"
             ;;
         *)
@@ -207,7 +222,7 @@ show_loading_screen() {
     done
     
     # Show remaining scripts
-    local remaining_scripts=("System Tools" "Themes" "Browsers" "Communication" "Media" "Development" "Shell")
+    local remaining_scripts=("System Tools" "Themes" "Browsers" "Communication" "Media" "Development" "Shell" "Docker")
     for completed in "${COMPLETED[@]}"; do
         for i in "${!remaining_scripts[@]}"; do
             if [[ " ${remaining_scripts[i]} " == *"$completed"* ]]; then
@@ -277,6 +292,10 @@ run_automated_script() {
             local items=("Zsh Shell|Oh My Zsh Framework|Powerlevel10k Theme|Auto Suggestions|Syntax Highlighting|Auto Completions")
             local current_item="Zsh Shell"
             ;;
+        "docker-setup.sh")
+            local items=("Docker Engine|Docker Desktop|Docker Compose|Docker Group Permissions")
+            local current_item="Docker Engine"
+            ;;
         *)
             local items=("Various Components")
             local current_item="Various Components"
@@ -317,6 +336,9 @@ run_automated_script() {
                 ;;
             "shell-setup.sh")
                 echo "1" | timeout 300 ./"$script_path" 2>&1
+                ;;
+            "docker-setup.sh")
+                echo "2" | timeout 300 ./"$script_path" 2>&1  # Install Docker Desktop for full experience
                 ;;
             *)
                 timeout 300 ./"$script_path" 2>&1
@@ -365,7 +387,7 @@ fully_automated_setup() {
     echo -e "\n${YELLOW}🚀 STARTING FULLY AUTOMATED SETUP...${NC}"
     echo -e "${YELLOW}This will install ALL components without any user interaction.${NC}"
     echo -e "${YELLOW}Please wait, this may take a while...${NC}"
-    echo -e "${YELLOW}Estimated time: 15-30 minutes depending on your internet connection.${NC}"
+    echo -e "${YELLOW}Estimated time: 20-40 minutes depending on your internet connection.${NC}"
     
     # Countdown
     for i in {5..1}; do
@@ -387,6 +409,7 @@ fully_automated_setup() {
         "media-setup.sh:Media & Entertainment"
         "dev-setup.sh:Development Tools"
         "shell-setup.sh:Terminal & Shell"
+        "docker-setup.sh:Docker Setup"
     )
     
     local total_steps=${#scripts[@]}
@@ -445,8 +468,11 @@ fully_automated_setup() {
     echo -e "║  ${GREEN}├─ Development:${NC}                                                  ║"
     echo -e "║  ${GREEN}│  ${PURPLE}• VS Code${NC} (snap+deb) | ${CYAN}• Node.js${NC} (curl+nvm) | ${GREEN}• Python${NC} (apt) ║"
     echo -e "║  ${GREEN}│  ${GREEN}• Git${NC} (apt) | ${GREEN}• Tmux${NC} (apt) | ${GREEN}• Vim${NC} (apt)                      ║"
-    echo -e "║  ${GREEN}└─ Shell:${NC}                                                        ║"
-    echo -e "║  ${GREEN}   ${ORANGE}• Zsh + Oh My Zsh + Powerlevel10k${NC} (git+script) + plugins        ║"
+    echo -e "║  ${GREEN}├─ Shell:${NC}                                                        ║"
+    echo -e "║  ${GREEN}│  ${ORANGE}• Zsh + Oh My Zsh + Powerlevel10k${NC} (git+script) + plugins        ║"
+    echo -e "║  ${GREEN}└─ Docker:${NC}                                                       ║"
+    echo -e "║  ${GREEN}   ${GREEN}• Docker Engine${NC} (apt) | ${BLUE}• Docker Desktop${NC} (deb)              ║"
+    echo -e "║  ${GREEN}   ${CYAN}• Docker Compose${NC} (apt) | ${GREEN}• Docker Permissions${NC} (group)      ║"
     
     echo "╠════════════════════════════════════════════════════════════════════╣"
     echo -e "║  ${YELLOW}🚀 NEXT STEPS:${NC}                                                   ║"
@@ -454,7 +480,9 @@ fully_automated_setup() {
     echo -e "║  ${YELLOW}2. Open GNOME Tweaks${NC} to customize your theme                      ║"
     echo -e "║  ${YELLOW}3. Run 'p10k configure'${NC} to customize shell prompt                 ║"
     echo -e "║  ${YELLOW}4. Use Super+G${NC} to open Pavucontrol audio mixer                    ║"
-    echo -e "║  ${YELLOW}5. Launch your new apps from the application menu!${NC}                ║"
+    echo -e "║  ${YELLOW}5. Launch Docker Desktop${NC} from app menu & accept terms             ║"
+    echo -e "║  ${YELLOW}6. Logout/login to use docker without sudo${NC}                        ║"
+    echo -e "║  ${YELLOW}7. Launch your new apps from the application menu!${NC}                ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     
@@ -500,7 +528,7 @@ fi
 # Main loop
 while true; do
     show_menu
-    read -p "Choose an option (0-9): " choice
+    read -p "Choose an option (0-10): " choice
     
     case $choice in
         1)
@@ -525,6 +553,9 @@ while true; do
             run_script "shell-setup.sh" "Terminal & Shell"
             ;;
         8)
+            run_script "docker-setup.sh" "Docker Setup"
+            ;;
+        9)
             echo -e "\n${YELLOW}Running ALL setup scripts...${NC}"
             echo -e "${YELLOW}This will take a while. Please wait...${NC}"
             
@@ -535,11 +566,12 @@ while true; do
             run_script "media-setup.sh" "Media & Entertainment"
             run_script "dev-setup.sh" "Development Tools"
             run_script "shell-setup.sh" "Terminal & Shell"
+            run_script "docker-setup.sh" "Docker Setup"
             
             echo -e "${GREEN}✓ All setup scripts completed!${NC}"
             read -p "Press Enter to continue..."
             ;;
-        9)
+        10)
             fully_automated_setup
             ;;
         0)
@@ -547,7 +579,7 @@ while true; do
             exit 0
             ;;
         *)
-            echo -e "${RED}Invalid option! Please choose 0-9.${NC}"
+            echo -e "${RED}Invalid option! Please choose 0-10.${NC}"
             read -p "Press Enter to continue..."
             ;;
     esac
